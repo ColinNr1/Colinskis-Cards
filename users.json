@@ -1,0 +1,14 @@
+{
+  "colinski": {
+    "username": "Colinski",
+    "displayName": "Colinski",
+    "role": "admin",
+    "passwordHash": "aea0fdff66e0e58dc8796c00aa4fbad856a22e67c3781bc75a199206fbee1790"
+  },
+  "filinjo": {
+    "username": "Filinjo",
+    "displayName": "Filinjo",
+    "role": "user",
+    "passwordHash": "f5c4df2c62137c06fded1eef7091a3eb1d602c3e44a7d78038c0ab2cf7b6aac6"
+  }
+}

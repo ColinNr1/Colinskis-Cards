@@ -177,7 +177,7 @@ a{color:var(--gold2);text-decoration:none}.hidden{display:none!important}
       <button data-view="account">◉ &nbsp; ACCOUNT</button>
 <button data-view="settings">⚙ &nbsp; SETTINGS</button>
     </nav>
-    <div class="side-footer"><div><span class="status-dot"></span>Local private storage</div><div>v7.1 • Exact Number Search • Local Multi-User</div></div>
+    <div class="side-footer"><div><span class="status-dot"></span>Local private storage</div><div>v7.2 • Exact Variant Tracking • Local Multi-User</div></div>
   </aside>
   <main class="main">
     <header class="topbar">
@@ -316,7 +316,7 @@ a{color:var(--gold2);text-decoration:none}.hidden{display:none!important}
 <div id="modalRoot"></div><div id="toastRoot"></div>
 <script>
 'use strict';
-const APP_VERSION='7.1.0-local';
+const APP_VERSION='7.2.0-local';
 let DB_NAME='COLINSKIS_CARD_VAULT_DB'; const DB_VERSION=1;
 const state={cards:[],watchlist:[],settings:{qaThreshold:60,qaMin:0.01},layout:'binder',binderPage:0,currentView:'dashboard',showcase:[],binders:[],activeBinderId:'mew-main',binderOrders:{},ghostSlots:{},coverOpen:false,publicCollectionMeta:null,binderLayouts:{},binderEditMode:false,showcaseSlots:[],showcaseEditMode:false};
 const CONDITIONS=['Near Mint','Lightly Played','Moderately Played','Heavily Played','Damaged'];
@@ -1023,6 +1023,51 @@ async function searchCards(){
     out.innerHTML=`<div class="empty" style="grid-column:1/-1">Search could not reach the card database. No identity was guessed.<br><small>${esc(e.message)}</small></div>`;
   }
 }
+
+
+function populateAddVariantSelector(card){
+  const sel=$('#addVariantSelect');
+  if(!sel)return;
+  const opts=verifiedVariantOptions(card);
+  sel.innerHTML='<option value="">'+(opts.length?'Select verified variant':'Unknown — no verified variant data')+'</option>'+
+    opts.map(v=>`<option value="${esc(v.id)}">${esc(v.label)}</option>`).join('');
+  const note=$('#addVariantNote');
+  if(note)note.textContent=opts.length
+    ? `${opts.length} verified printing${opts.length===1?'':'s'} reported for this exact card.`
+    : 'No reliable variant metadata was returned. Variant will remain Unknown.';
+  if(opts.length===1)sel.value=opts[0].id;
+}
+
+function verifiedVariantOptions(card){
+  const v=card?.variants||{};
+  const options=[];
+  const add=(id,label)=>{if(v[id]===true)options.push({id,label})};
+  add('normal','Normal');
+  add('holo','Holo');
+  add('reverse','Reverse Holo');
+  add('firstEdition','1st Edition');
+  add('wPromo','W Promo');
+  return options;
+}
+function variantLabel(id){
+  return ({normal:'Normal',holo:'Holo',reverse:'Reverse Holo',firstEdition:'1st Edition',wPromo:'W Promo'})[id]||id||'Unknown';
+}
+
+function isVariantPriceSafe(card,price){
+  if(!card)return false;
+  const variant=card.variant||'Unknown';
+  if(variant==='Unknown')return false;
+  // A price is variant-safe only when the provider payload explicitly identifies a matching variant.
+  const pv=String(price?.variant||price?.printing||'').toLowerCase();
+  if(!pv)return false;
+  const cv=variantLabel(variant).toLowerCase();
+  return pv===cv || (variant==='reverse'&&pv.includes('reverse')) || (variant==='holo'&&pv==='holo');
+}
+
+function variantIdentityKey(card,variant){
+  return `${card.provider||'unknown'}::${card.providerId||card.id||'unknown'}::${variant||'unknown'}`;
+}
+
 function renderSearchResults(items){const out=$('#searchResults');if(!items.length){out.innerHTML='<div class="empty" style="grid-column:1/-1">No verified cards found.</div>';return}window.__searchItems=items;out.innerHTML=items.map((x,i)=>`<div class="result"><img loading="lazy" src="${esc(x.imageSmall||x.imageLarge||'')}" alt="${esc(x.name)}"><h4>${esc(x.name)}</h4><p>${esc(x.setName)} • ${esc(x.fullSetNumber)}<br>${esc(x.rarity)} • ${esc(x.variant)}</p><button class="btn primary" data-select-result="${i}">Select exact card</button></div>`).join('')}
 async function chooseSearchResult(idx){const ident=window.__searchItems[idx];if(!ident)return;let raw=ident.raw,prices=[];try{if(ident.database==='TCGdex'){if(!raw?.set)raw=await Providers.tcgdex.card(ident.databaseId,ident.language);prices=pricesFromTCGdex(raw)}else prices=pricesFromPokemonTCG(raw)}catch(e){await repo.log('price_fetch_error',e.message,{id:ident.databaseId})}openAddDetails(ident,prices)}
 function openAddDetails(ident,prices=[]){const root=$('#modalRoot');root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h3>Confirm exact card</h3><button class="close" data-close>×</button></div><div class="modal-body"><div class="detail-grid"><div class="detail-image"><img src="${esc(ident.imageLarge||ident.imageSmall||'')}"></div><div><div class="detail-title"><h2>${esc(ident.name)}</h2><div class="meta">${esc(ident.setName)} • ${esc(ident.fullSetNumber)} • ${esc(ident.rarity)}</div></div><div class="chips"><span class="chip">${esc(ident.database)} ID: ${esc(ident.databaseId)}</span><span class="chip">Set: ${esc(ident.setCode)}</span><span class="chip">Variant: ${esc(ident.variant)}</span><span class="chip">Language: ${esc(ident.language)}</span></div><div class="divider"></div><div class="form-grid"><div><label>Quantity</label><input id="addQty" type="number" min="1" value="1"></div><div><label>Condition</label><select id="addCondition"><option value="">Unknown / not entered</option>${CONDITIONS.map(x=>`<option>${x}</option>`).join('')}</select></div><div><label>Language override</label><input id="addLanguage" value="${esc(ident.language)}"></div><div><label>Purchase price per card</label><input id="addPaid" type="number" min="0" step="0.01" placeholder="Optional"></div><div><label>Purchase date</label><input id="addDate" type="date"></div><div><label>Purchase source</label><input id="addSource" placeholder="Optional"></div><div class="full"><label>Notes</label><textarea id="addNotes" rows="3"></textarea></div></div><div class="divider"></div><h3>Verified price data found now</h3><div class="price-list">${prices.length?prices.map(p=>`<div class="price-box"><small>${esc(p.source)} • ${esc(p.priceType)} • ${esc(p.variant)}</small><b>${money(p.price,p.currency)}</b><small>Updated ${fmtDate(p.updatedAt)}</small></div>`).join(''):'<div class="price-box"><small>No reliable price returned</small><b>Unknown</b></div>'}</div><div class="toolbar" style="margin-top:18px"><button class="btn primary" id="confirmAdd">ADD TO COLLECTION</button><button class="btn" id="addWatch">Add to watchlist</button></div></div></div></div></div></div>`;bindModalClose();$('#confirmAdd').onclick=()=>confirmAdd(ident,prices);$('#addWatch').onclick=()=>confirmWatch(ident,prices)}

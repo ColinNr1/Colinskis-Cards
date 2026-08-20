@@ -1,0 +1,50 @@
+COLINSKIS CARD VAULT V8 — GITHUB + CLOUDFLARE WORKER
+
+WHAT YOU GET
+- GitHub Pages hosts index.html
+- GitHub stores each user's vault JSON
+- Cloudflare Worker keeps GitHub token + password hashes private
+- Colinski Admin can create users from inside the Vault
+- Trades work across different PCs/devices
+- IndexedDB remains a local cache
+
+FILES
+- index.html
+- worker.js
+- data/trades.json
+- data/users/colinski.json
+- data/users/filinjo.json
+
+STEP 1 — CLOUDFLARE
+1. Create/login to Cloudflare.
+2. Workers & Pages > Create > Worker.
+3. Paste worker.js and deploy.
+4. Add KV namespace binding named: USERS
+5. Add secrets:
+   GH_TOKEN = a GitHub fine-grained token with Contents read/write for ColinNr1/Colinskis-Cards
+   SESSION_SECRET = a long random string
+6. Add variables:
+   GH_OWNER = ColinNr1
+   GH_REPO = Colinskis-Cards
+   ALLOWED_ORIGIN = https://colinnr1.github.io
+7. Deploy and copy Worker URL, e.g.
+   https://colinskis-card-vault.<your-account>.workers.dev
+
+STEP 2 — INDEX.HTML
+Open index.html in a text editor and replace:
+PASTE_WORKER_URL_HERE
+with your Worker URL.
+
+STEP 3 — GITHUB
+Upload:
+- index.html
+- data/trades.json
+- data/users/colinski.json
+- data/users/filinjo.json
+
+STEP 4 — INITIAL LOGINS
+Colinski / CoAn5678
+Filinjo / Monke67
+
+After Colinski logs in, ADMIN appears. New users can then be created directly in the app.
+Passwords are NOT stored in GitHub.

@@ -14,14 +14,15 @@ html,body{margin:0;min-height:100%;background:#090b10;color:#f4f7fb;font-family:
 <script>
 (async()=>{
   try{
-    const res=await fetch('./app-legacy.html?v=20260911-sync-hotfix',{cache:'no-store'});
+    const res=await fetch('./app-legacy.html?v=20260911-sync-hotfix-2',{cache:'no-store'});
     if(!res.ok)throw new Error('App source HTTP '+res.status);
     let html=await res.text();
     html=html
       .replaceAll('CLOUD_SUPPRESS','REMOTE_SUPPRESS')
       .replaceAll('scheduleCloudSave','scheduleRemoteSave')
-      .replace("const APP_VERSION='7.7.0-cloud';","const APP_VERSION='8.4.1-sync-hotfix';")
-      .replace('  await loadPublicCollection();','  // obsolete collection.json loader disabled; per-user GitHub vault is authoritative');
+      .replace("const APP_VERSION='7.7.0-cloud';","const APP_VERSION='8.4.2-sync-hotfix';")
+      .replace('  await loadPublicCollection();','  // obsolete collection.json loader disabled; per-user GitHub vault is authoritative')
+      .replace("$('#syncNowBtn')?.addEventListener('click',syncNow);","$('#syncNowBtn')?.addEventListener('click',async()=>{try{await loadRemoteVault();renderAll();toast('Synced from GitHub.')}catch(e){toast('Sync failed: '+(e.message||e),true)}});");
     document.open();
     document.write(html);
     document.close();

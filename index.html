@@ -20,8 +20,16 @@ html,body{margin:0;min-height:100%;background:#090b10;color:#f4f7fb;font-family:
     html=html
       .replaceAll('CLOUD_SUPPRESS','REMOTE_SUPPRESS')
       .replaceAll('scheduleCloudSave','scheduleRemoteSave')
-      .replace("const APP_VERSION='7.7.0-cloud';","const APP_VERSION='8.4.2-sync-hotfix';")
-      .replace('  await loadPublicCollection();','  // obsolete collection.json loader disabled; per-user GitHub vault is authoritative')
+      .replace("const APP_VERSION='7.7.0-cloud';","const APP_VERSION='8.5.0-browser-only';")
+      .replace('  await loadPublicCollection();','  // public collection loader disabled; IndexedDB is authoritative')
+      .replace('<div class="local-auth-overlay" id="localAuthOverlay">','<div class="local-auth-overlay" id="localAuthOverlay" style="display:none">')
+      .replace("async function bootVault(){await repo.init();await tradeRepo.init();await loadState();try{await loadRemoteVault()}catch(e){console.warn('Using local cache',e)}renderAll();renderLocalAccount();renderTrades();setupTradeDropZones();renderAdminUsers();}","async function bootVault(){await repo.init();await tradeRepo.init();await loadState();renderAll();renderLocalAccount();renderTrades();setupTradeDropZones();}")
+      .replace("(async function init(){if(!GH_TOKEN){showGithubSetup();setTimeout(()=>$('#githubTokenInput')?.focus(),50);return}try{await startVaultAuth()}catch(e){console.error(e);showGithubSetup();$('#githubSetupError').textContent='Could not connect to GitHub.'}})();","(async function init(){ACTIVE_LOCAL_USER='Colinski';ACTIVE_USER_PROFILE={username:'Colinski',displayName:'Colinski',role:'user'};DB_NAME='COLINSKIS_CARD_VAULT_CACHE__colinski';localStorage.removeItem('cardVaultGithubToken');await bootVault();})();")
+      .replace('GitHub synced •','Saved in this browser •')
+      .replace('Collections are separated by user and stored only in this browser.','Your cards are stored in this browser.')
+      .replace(' id="switchLocalUserBtn"',' id="switchLocalUserBtn" style="display:none"')
+      .replace(' id="changeGithubTokenBtn"',' id="changeGithubTokenBtn" style="display:none"')
+      .replace(' id="syncNowBtn"',' id="syncNowBtn" style="display:none"')
       .replace("$('#syncNowBtn')?.addEventListener('click',syncNow);","$('#syncNowBtn')?.addEventListener('click',async()=>{try{await loadRemoteVault();renderAll();toast('Synced from GitHub.')}catch(e){toast('Sync failed: '+(e.message||e),true)}});");
     document.open();
     document.write(html);

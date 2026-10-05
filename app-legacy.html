@@ -719,11 +719,11 @@ const Providers={
 };
 
 function pricesFromTCGdex(card){const p=card?.pricing||card?.prices||{};const out=[];const now=new Date().toISOString();
-  const cm=p.cardmarket; if(cm){const ts=normalizeTimestamp(cm.updated)||now; const pairs=[['avg7','7-day average'],['trend','trend'],['avg30','30-day average'],['avg1','24h average'],['avg','average'],['avg7-holo','7-day average holo'],['trend-holo','trend holo']]; for(const [k,t] of pairs){if(validNum(cm[k]))out.push({price:+cm[k],currency:cm.unit||'EUR',priceType:t,source:'Cardmarket via TCGdex',sourceId:card.id||null,sourceUrl:null,variant:k.includes('holo')?'holo':'standard',updatedAt:ts,providerKey:`cardmarket:${k}`})}}
+  const cm=p.cardmarket; if(cm){const ts=normalizeTimestamp(cm.updated)||now; const pairs=[['avg7','7-day average'],['trend','trend'],['avg30','30-day average'],['avg1','24h average'],['avg','average'],['avg7-holo','7-day average holo'],['trend-holo','trend holo']]; for(const [k,t] of pairs){if(validNum(cm[k]))out.push({price:+cm[k],currency:cm.unit||'EUR',priceType:t,source:'Cardmarket EU average (not language-specific) via TCGdex',sourceId:card.id||null,sourceUrl:null,variant:k.includes('holo')?'holo':'standard',updatedAt:ts,providerKey:`cardmarket:${k}`})}}
   const tp=p.tcgplayer; if(tp){const ts=normalizeTimestamp(tp.updated)||now; for(const [variant,obj] of Object.entries(tp)){if(['updated','unit'].includes(variant)||!obj||typeof obj!=='object')continue; if(validNum(obj.marketPrice))out.push({price:+obj.marketPrice,currency:tp.unit||'USD',priceType:'market',source:'TCGplayer via TCGdex',sourceId:card.id||null,sourceUrl:null,variant,updatedAt:ts,providerKey:`tcgplayer:${variant}:market`});}}
   return out;
 }
-function pricesFromPokemonTCG(card){const out=[];if(card?.cardmarket){const cm=card.cardmarket;const ts=normalizeTimestamp(cm.updatedAt)||new Date().toISOString();const pairs=[['avg7','7-day average'],['trendPrice','trend'],['avg30','30-day average'],['avg1','24h average'],['averageSellPrice','average'],['reverseHoloAvg7','7-day average reverse holo'],['reverseHoloTrend','trend reverse holo']];for(const[k,t]of pairs)if(validNum(cm.prices?.[k]))out.push({price:+cm.prices[k],currency:'EUR',priceType:t,source:'Cardmarket via Pokémon TCG API',sourceId:card.id,sourceUrl:cm.url||null,variant:k.toLowerCase().includes('reverse')?'reverse holo':'standard',updatedAt:ts,providerKey:`cardmarket:${k}`})}
+function pricesFromPokemonTCG(card){const out=[];if(card?.cardmarket){const cm=card.cardmarket;const ts=normalizeTimestamp(cm.updatedAt)||new Date().toISOString();const pairs=[['avg7','7-day average'],['trendPrice','trend'],['avg30','30-day average'],['avg1','24h average'],['averageSellPrice','average'],['reverseHoloAvg7','7-day average reverse holo'],['reverseHoloTrend','trend reverse holo']];for(const[k,t]of pairs)if(validNum(cm.prices?.[k]))out.push({price:+cm.prices[k],currency:'EUR',priceType:t,source:'Cardmarket EU average (not language-specific) via Pokémon TCG API',sourceId:card.id,sourceUrl:cm.url||null,variant:k.toLowerCase().includes('reverse')?'reverse holo':'standard',updatedAt:ts,providerKey:`cardmarket:${k}`})}
   if(card?.tcgplayer){const tp=card.tcgplayer,ts=normalizeTimestamp(tp.updatedAt)||new Date().toISOString();for(const[variant,obj]of Object.entries(tp.prices||{}))if(validNum(obj?.market))out.push({price:+obj.market,currency:'USD',priceType:'market',source:'TCGplayer via Pokémon TCG API',sourceId:card.id,sourceUrl:tp.url||null,variant,updatedAt:ts,providerKey:`tcgplayer:${variant}:market`})}return out}
 function validNum(v){return typeof v==='number'&&Number.isFinite(v)&&v>=0}
 function normalizeTimestamp(v){if(!v)return null;if(typeof v==='number')return new Date(v<1e12?v*1000:v).toISOString();const s=String(v).replaceAll('/','-');const d=new Date(s);return isNaN(d)?null:d.toISOString()}
@@ -1201,7 +1201,7 @@ function drawChart(el,points,currency='EUR'){if(!points||points.length<2){el.inn
 function updateSetFilter(){const sel=$('#setFilter'),cur=sel.value;const sets=[...new Map(state.cards.map(c=>[c.identity.setCode,c.identity.setName])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));sel.innerHTML='<option value="">All sets</option>'+sets.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join('');sel.value=cur}
 
 // ---------- Add/search flow ----------
-function openAddModal(){const root=$('#modalRoot');root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h3>Add Card</h3><button class="close" data-close>×</button></div><div class="modal-body"><div class="search-tabs"><button class="active">Exact card search</button><button id="browseSetBtn">Browse set</button><button id="manualBtn">Manual entry</button></div><div class="search-row"><input class="form-control" id="searchName" placeholder="Card name or name + number (e.g. Metagross 061)"><input class="form-control" id="searchSet" placeholder="Set code/name"><input class="form-control" id="searchNumber" placeholder="Card #"></div><div class="toolbar" style="margin-top:10px"><select id="searchLang" class="form-control">
+function openAddModal(){const root=$('#modalRoot');root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h3>Add Card</h3><button class="close" data-close>×</button></div><div class="modal-body"><div class="search-tabs"><button class="active">Exact card search</button><button id="browseSetBtn">Browse set</button><button id="manualBtn">Manual entry</button></div><div class="search-row"><input class="form-control" id="searchName" placeholder="Card name or name + number (e.g. Metagross 061)"><input class="form-control" id="searchSet" placeholder="Set code or localized set name"><input class="form-control" id="searchNumber" placeholder="Card # (e.g. 004/102)"></div><div class="toolbar" style="margin-top:10px"><select id="searchLang" class="form-control">
 <option value="en">English</option>
 <option value="ja">Japanese</option>
 <option value="ko">Korean</option>
@@ -1212,9 +1212,14 @@ function openAddModal(){const root=$('#modalRoot');root.innerHTML=`<div class="m
 <option value="es">Spanish</option>
 <option value="it">Italian</option>
 <option value="pt">Portuguese</option>
+<option value="pt-br">Portuguese (Brazil)</option>
+<option value="pt-pt">Portuguese (Portugal)</option>
+<option value="nl">Dutch</option>
+<option value="pl">Polish</option>
+<option value="ru">Russian</option>
 <option value="id">Indonesian</option>
 <option value="th">Thai</option>
-</select><button class="btn primary" id="doSearch">Search cards</button></div><div class="source-note">Language search now supports Korean, Simplified Chinese and Traditional Chinese. Use the card name as printed in that language, or use set/card number for the strongest exact match.<br><br>Tip: you can type <b>Metagross 061</b> or <b>Metagross 061/086</b>. The number is treated as an exact card-number filter, not as part of the Pokémon name. Exact matches are never auto-added.</div><div id="searchResults" class="search-results"></div></div></div></div>`;bindModalClose();$('#doSearch').onclick=searchCards;$('#manualBtn').onclick=openManualEntry;$('#browseSetBtn').onclick=openBrowseSet;$('#searchName').addEventListener('keydown',e=>{if(e.key==='Enter')searchCards()})}
+</select><button class="btn primary" id="doSearch">Search cards</button></div><div class="source-note">All database languages are available. Coverage varies by language. Cardmarket EUR prices are EU market averages, not guaranteed language-specific values. Use the card name as printed in that language, or use set/card number for the strongest exact match.<br><br>Tip: you can type <b>Metagross 061</b> or <b>Metagross 061/086</b>. The number is treated as an exact card-number filter, not as part of the Pokémon name. Exact matches are never auto-added.</div><div id="searchResults" class="search-results"></div></div></div></div>`;bindModalClose();$('#doSearch').onclick=searchCards;$('#manualBtn').onclick=openManualEntry;$('#browseSetBtn').onclick=openBrowseSet;$('#searchName').addEventListener('keydown',e=>{if(e.key==='Enter')searchCards()})}
 
 function normalizeCardNumberToken(v){
   const s=String(v||'').trim().toLowerCase().replace(/^#/,'');
@@ -1225,7 +1230,7 @@ function normalizeCardNumberToken(v){
 }
 function parseCombinedCardQuery(rawName,explicitNumber=''){
   const raw=String(rawName||'').trim();
-  if(explicitNumber)return {name:raw,number:String(explicitNumber).trim(),setTotal:null,combined:false};
+  if(explicitNumber){const parts=String(explicitNumber).trim().replace(/^#/,'').split('/');return {name:raw,number:parts[0],setTotal:parts[1]||null,combined:false};}
   // Require whitespace before the number so names such as Porygon2 are not misread.
   const m=raw.match(/^(.*?)\s+#?([a-z]*\d+[a-z]*)(?:\/(\d+))?$/i);
   if(!m)return {name:raw,number:'',setTotal:null,combined:false};
@@ -1243,7 +1248,7 @@ function fullSetTotalMatches(fullSetNumber,wantedTotal){
 
 async function searchCards(){
   const rawName=$('#searchName').value.trim();
-  const set=$('#searchSet').value.trim();
+  let set=$('#searchSet').value.trim().toLowerCase();
   const explicitNumber=$('#searchNumber').value.trim();
   const language=$('#searchLang').value;
   const parsed=parseCombinedCardQuery(rawName,explicitNumber);
@@ -1254,6 +1259,14 @@ async function searchCards(){
   out.innerHTML='<div class="loading" style="grid-column:1/-1">Searching exact card identity…</div>';
 
   try{
+    if(set){
+      const catalog=await Providers.tcgdex.sets(language);
+      const exact=catalog.find(s=>s.id.toLowerCase()===set||s.name.toLowerCase()===set);
+      const matches=catalog.filter(s=>s.name.toLowerCase().includes(set));
+      if(exact)set=exact.id;
+      else if(matches.length===1)set=matches[0].id;
+      else if(matches.length>1){out.innerHTML='<div class="empty" style="grid-column:1/-1">Several sets match. Use one of these set codes: '+matches.slice(0,12).map(s=>esc(s.name)+' ('+esc(s.id)+')').join(', ')+'</div>';return;}
+    }
     // Strongest route: exact set code + exact local number.
     if(set&&number&&!set.includes(' ')){
       try{
@@ -1322,6 +1335,7 @@ async function searchCards(){
       return;
     }
 
+    if(language!=='en'){out.innerHTML='<div class="empty" style="grid-column:1/-1">No verified cards match this language and search. Try the printed Pokémon name, an exact set code, or card number. Database coverage varies by language; English cards are not substituted.</div>';return;}
     // Secondary structured source. Query name broadly when leading-zero normalization is required.
     out.innerHTML='<div class="loading" style="grid-column:1/-1">No verified TCGdex match. Checking secondary structured source…</div>';
     let alt=await Providers.pokemontcg.search({name,set,number:''});

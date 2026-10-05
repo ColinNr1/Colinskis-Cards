@@ -1647,7 +1647,7 @@ document.addEventListener('click',function(e){const b=e.target.closest('.nav but
 const scanLanguages=[['en','English','eng'],['de','German','deu'],['ja','Japanese','jpn'],['ko','Korean','kor'],['zh-cn','Chinese (Simplified)','chi_sim'],['zh-tw','Chinese (Traditional)','chi_tra'],['fr','French','fra'],['es','Spanish','spa'],['it','Italian','ita'],['pt','Portuguese','por'],['pt-br','Portuguese (Brazil)','por'],['pt-pt','Portuguese (Portugal)','por'],['nl','Dutch','nld'],['pl','Polish','pol'],['ru','Russian','rus'],['id','Indonesian','ind'],['th','Thai','tha']];
 const scanSession={image:null,items:[],worker:null,busy:false,generation:0};
 const scanLangOptions=(selected='en')=>scanLanguages.map(([id,label])=>`<option value="${id}" ${id===selected?'selected':''}>${label}</option>`).join('');
-function scanStatus(text){const el=$('#scanStatus');if(el)el.textContent=text;}
+function scanStatus(text){for(const id of ['scanStatus','scanReviewProgress']){const el=$('#'+id);if(el)el.textContent=text;}}
 function openScanner(){
  if(scanSession.busy){toast('A scan is still running.');return;}
  scanSession.generation++;scanSession.items=[];scanSession.image=null;
@@ -1728,6 +1728,7 @@ async function scanAnalyse(){
  if(scanSession.busy||!await scanPrepare())return;const generation=scanSession.generation;scanSession.busy=true;$('#scanAnalyse').disabled=true;$('#scanSplit').disabled=true;scanUpdateCount();let worker;
  try{scanStatus('Loading on-device text recognition… First use may take a minute.');await scanLoadOCR();const lang=scanLanguages.find(x=>x[0]===$('#scanDefaultLang').value)?.[2]||'eng';worker=await Tesseract.createWorker(lang);scanSession.worker=worker;
  for(const x of scanSession.items){if(generation!==scanSession.generation||!$('#scanReview'))break;scanStatus(`Reading pocket ${x.id+1} of ${scanSession.items.length}…`);const scale=Math.min(2,1600/x.canvas.height),c=document.createElement('canvas');c.width=Math.round(x.canvas.width*scale);c.height=Math.round(x.canvas.height*scale);c.getContext('2d').drawImage(x.canvas,0,0,c.width,c.height);const result=await worker.recognize(c);x.text=result.data.text||'';Object.assign(x,scanReadText(x.text));scanRenderReview();}
+ scanOpenReview();
  for(const x of scanSession.items){if(generation!==scanSession.generation||!$('#scanReview'))break;if(x.name||x.number||x.set){scanStatus(`Finding suggestions for pocket ${x.id+1}…`);await scanFind(x.id);}}
  scanStatus('Analysis complete. Check each suggestion, correct fields if needed, select a variant and approve. No cards have been added.');
  }catch(e){scanStatus(e.message||'Analysis failed. Use manual search for each crop.');}finally{if(worker)await worker.terminate().catch(()=>{});scanSession.worker=null;scanSession.busy=false;if($('#scanAnalyse')){$('#scanAnalyse').disabled=false;$('#scanSplit').disabled=false;scanRenderReview();scanOpenReview();}}
@@ -1756,7 +1757,7 @@ function scanOpenReview(){
  const review=$('#scanReview'),footer=$('#scanFooter');
  const marker=document.createElement('div');marker.id='scanReviewHome';review.before(marker);
  const overlay=document.createElement('div');overlay.id='scanReviewWindow';overlay.className='modal-backdrop scan-review-window';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Review recognised cards');
- overlay.innerHTML='<div class="modal"><div class="modal-head"><h3 id="scanReviewHeading">Review cards</h3><button class="close" id="scanReviewClose" aria-label="Back to photo">×</button></div><div class="modal-body"><p class="source-note">Compare the photo with the database match. Choose the exact card, language and printing. Unrecognised pockets also appear for manual correction.</p><div id="scanReviewStage"></div><div class="review-step-actions"><button class="btn" id="scanReviewPrev">Previous</button><button class="btn primary" id="scanReviewAccept">Approve & next</button><button class="btn" id="scanReviewSkip">Skip & next</button><button class="btn" id="scanReviewNext">Next</button></div><div id="scanReviewSaveStage"></div></div></div>';
+ overlay.innerHTML='<div class="modal"><div class="modal-head"><h3 id="scanReviewHeading">Review cards</h3><button class="close" id="scanReviewClose" aria-label="Back to photo">×</button></div><div class="modal-body"><p class="source-note">Compare the photo with the database match. Choose the exact card, language and printing. Unrecognised pockets also appear for manual correction.</p><p id="scanReviewProgress" role="status" aria-live="polite"></p><div id="scanReviewStage"></div><div class="review-step-actions"><button class="btn" id="scanReviewPrev">Previous</button><button class="btn primary" id="scanReviewAccept">Approve & next</button><button class="btn" id="scanReviewSkip">Skip & next</button><button class="btn" id="scanReviewNext">Next</button></div><div id="scanReviewSaveStage"></div></div></div>';
  $('#modalRoot').appendChild(overlay);$('#scanReviewStage').appendChild(review);$('#scanReviewSaveStage').appendChild(footer);
  $('.scan-modal').inert=true;
  scanReviewIndex=0;
